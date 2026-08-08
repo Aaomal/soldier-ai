@@ -198,7 +198,7 @@ if prompt := st.chat_input("Ask a question, request a step-by-step solution, or 
         try:
            response = client.chat.completions.create(
     model="gpt-4o-mini",
-    messages=st.session_state.messages) if st.session_state.messages else [
+    messages=st.session_state.messages,stream=true) if st.session_state.messages else [
         {"role": "user", "content": user_input}
     ]
 

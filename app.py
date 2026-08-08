@@ -1,75 +1,34 @@
 import streamlit as st
 from openai import OpenAI
-
-st.set_page_config(page_title="Soldier AI", page_icon="🪖", layout="wide")
-
-st.markdown("""
-<style>
-body {
-    background-color: #0e1117;
-    color: white;
-}
-</style>
-""", unsafe_allow_html=True)
-api_key = st.text_input("Enter API Key", type="password")
-
-if not api_key:
-    st.stop()
-
-client = OpenAI(api_key=api_key)
-# INPUT (FIRST)
-user_input = st.chat_input("Ask something...")
-
-# THEN USE IT
-if user_input:
-    st.session_state.messages.append({
-        "role": "user",
-        "content": user_input
-    })
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=st.session_state.messages
-    )
-
-    reply = response.choices[0].message.content
-
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": reply
-    })
-
-    st.chat_message("assistant").write(reply)
 import json
 import os
-from openai import OpenAI
 
 # -------------------------------------------------------------------
-# Page Config (Mobile-Responsive & Clean UI)
+# PAGE CONFIG
 # -------------------------------------------------------------------
+
 st.set_page_config(
     page_title="Personal AI Coach & Companion",
     page_icon="🎖️",
-    layout="centered",
-    initial_sidebar_state="expanded"
+    layout="centered"
 )
+
+# -------------------------------------------------------------------
+# MEMORY FILE
+# -------------------------------------------------------------------
 
 MEMORY_FILE = "ai_companion_memory.json"
 
-# -------------------------------------------------------------------
-# Persistent Memory Engine (Learns from Mistakes & Preferences)
-# -------------------------------------------------------------------
 def load_memory():
     if os.path.exists(MEMORY_FILE):
         try:
             with open(MEMORY_FILE, "r") as f:
                 return json.load(f)
-        except Exception:
+        except:
             pass
     return {
         "coach_name": "Major Astra",
-        "corrections": [],
-        "user_notes": []
+        "corrections": []
     }
 
 def save_memory(data):
@@ -79,142 +38,111 @@ def save_memory(data):
 memory_data = load_memory()
 
 # -------------------------------------------------------------------
-# Sidebar: Customization & Memory Management
+# SIDEBAR
 # -------------------------------------------------------------------
+
 st.sidebar.title("🎖️ Control Center")
 
-# 1. API Key Config
-api_key = st.sidebar.text_input(
-    "OpenAI / Compatible API Key", 
-    type="password", 
-    value=os.getenv("OPENAI_API_KEY", "")
-)
+api_key = st.sidebar.text_input("Enter API Key", type="password")
 
-# 2. Custom Naming
 custom_name = st.sidebar.text_input(
-    "Name Your AI Assistant:", 
+    "AI Name:",
     value=memory_data.get("coach_name", "Major Astra")
 )
+
 if custom_name != memory_data.get("coach_name"):
     memory_data["coach_name"] = custom_name
     save_memory(memory_data)
-    st.sidebar.success(f"Renamed to {custom_name}!")
 
-st.sidebar.divider()
+st.sidebar.subheader("🧠 Teach AI")
 
-# 3. Learn From Mistakes Engine
-st.sidebar.subheader("🧠 Teach & Correct AI")
-st.sidebar.caption("Add corrections or specific personal rules here so your AI never repeats a mistake.")
+new_rule = st.sidebar.text_area("Add rule:")
 
-new_correction = st.sidebar.text_area(
-    "Add a correction/rule:", 
-    placeholder="e.g., Explain NDA calculus using geometric intuition first."
-)
-if st.sidebar.button("Save Lesson"):
-    if new_correction.strip():
-        memory_data["corrections"].append(new_correction.strip())
+if st.sidebar.button("Save Rule"):
+    if new_rule.strip():
+        memory_data["corrections"].append(new_rule.strip())
         save_memory(memory_data)
-        st.sidebar.success("Rule saved permanently!")
-
-if memory_data["corrections"]:
-    with st.sidebar.expander("📚 Saved Memory Log"):
-        for idx, corr in enumerate(memory_data["corrections"], 1):
-            st.write(f"**{idx}.** {corr}")
-        if st.button("Reset Saved Memory"):
-            memory_data["corrections"] = []
-            save_memory(memory_data)
-            st.rerun()
+        st.sidebar.success("Saved!")
 
 # -------------------------------------------------------------------
-# Triple-Identity System Prompt Engine
+# SYSTEM PROMPT
 # -------------------------------------------------------------------
+
 def build_system_prompt(name, corrections):
-    lessons_formatted = "\n".join([f"- {c}" for c in corrections]) if corrections else "None yet."
+    lessons = "\n".join([f"- {c}" for c in corrections]) if corrections else "None"
 
     return f"""
-You are '{name}', a versatile AI designed as a 3-in-1 personal assistant: a Friendly Companion, an NDA Exam Coach, and a Master Teacher.
+You are {name}, an AI with 3 roles:
 
-### YOUR TRIPLE IDENTITY:
+1. Friendly Companion
+2. Expert Teacher
+3. NDA Coach
 
-1. THE FRIENDLY COMPANION (Everyday Life & Support):
-- Be warm, empathetic, relatable, and approachable.
-- Chat naturally about daily life, stress, hobbies, general questions, or non-exam topics.
-- Listen actively when the cadet feels burnt out, tired, or needs a sounding board.
+Follow user rules:
+{lessons}
 
-2. THE EXPERT TEACHER (Conceptual Mastery & Clarification):
-- Break down complex subjects (Mathematics, Physics, Chemistry, English, Geography, History, Polity) into crystal-clear logic.
-- For math and science questions: Solve STEP-BY-STEP. State formulas clearly before using them.
-- Avoid dumping bare answers—always explain the underlying 'why' and core concept.
-
-3. THE DISCIPLINED NDA COACH (Strategy, Drills & Professionalism):
-- Maintain military-grade precision, professionalism, and high standards.
-- Enforce NDA exam awareness: Keep negative marking in mind (-0.83 for Math, -0.33 for GAT).
-- Provide SSB interview preparation guidance (OIR tests, PPDT, Lecturette, personal interview tips).
-- Manage information logically: Use bullet points, bold text, and clean formatting for study schedules or action plans.
-- Address the user respectfully as "Cadet" or "Future Officer" when on NDA/exam topics.
-
-### STRICT MEMORY RULES & PAST CORRECTIONS:
-You MUST follow these rules taught by the user from previous sessions:
-{lessons_formatted}
+Always explain clearly, step-by-step.
 """
 
 # -------------------------------------------------------------------
-# Main Chat Interface
+# MAIN UI
 # -------------------------------------------------------------------
+
 st.title(f"🎖️ {custom_name}")
-st.caption("Your All-in-One Friend, Master Teacher & NDA Preparation Coach.")
+st.caption("Your AI Friend + Teacher + NDA Coach")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display history
+# show chat history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# User Input
-if prompt := st.chat_input("Ask a question, request a step-by-step solution, or just chat..."):
+# user input
+prompt = st.chat_input("Ask anything...")
+
+if prompt:
     if not api_key:
-        st.error("Please enter your API Key in the sidebar to begin.")
+        st.error("Enter API key in sidebar")
         st.stop()
 
     client = OpenAI(api_key=api_key)
 
+    # add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
+
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Build prompt and complete message history
     system_prompt = build_system_prompt(custom_name, memory_data["corrections"])
-    full_messages = [{"role": "system", "content": system_prompt}] + [
-        {"role": m["role"], "content": m["content"]} for m in st.session_state.messages
-    ]
 
-    # Generate Streamed Response
+    full_messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
+
+    # assistant response
     with st.chat_message("assistant"):
-        message_placeholder = st.empty()
+        placeholder = st.empty()
         full_response = ""
-        st.write("DEBUG:", st.session_state.messages)
-        try:
-           response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=st.session_state.messages,stream=true) if st.session_state.messages else [
-        {"role": "user", "content": user_input}
-    ]
 
-    for chunk in response:
-        print(chunk)
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=full_messages,
+                stream=True
+            )
+
+            for chunk in response:
                 if chunk.choices[0].delta.content:
                     full_response += chunk.choices[0].delta.content
-                    message_placeholder.markdown(full_response + "▌")
+                    placeholder.markdown(full_response + "▌")
 
-            message_placeholder.markdown(full_response)
+            placeholder.markdown(full_response)
 
-        except:Exception as e:
+        except Exception as e:
             st.error(f"Error: {e}")
 
-    if full_response:
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-
-
-        
+    # save response
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": full_response
+    })

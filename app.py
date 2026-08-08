@@ -17,12 +17,15 @@ if not api_key:
     st.stop()
 
 client = OpenAI(api_key=api_key)
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-    user_input = st.chat_input("Ask me anything...")
+# INPUT (FIRST)
+user_input = st.chat_input("Ask something...")
 
+# THEN USE IT
 if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.messages.append({
+        "role": "user",
+        "content": user_input
+    })
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -31,13 +34,12 @@ if user_input:
 
     reply = response.choices[0].message.content
 
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    for msg in st.session_state.messages:
-       if msg["role"] == "user":
-        st.chat_message("user").write(msg["content"])
-    else:
-        st.chat_message("assistant").write(msg["content"])
-        import streamlit as st
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": reply
+    })
+
+    st.chat_message("assistant").write(reply)
 import json
 import os
 from openai import OpenAI

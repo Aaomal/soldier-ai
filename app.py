@@ -211,7 +211,7 @@ if prompt := st.chat_input("Ask a question, request a step-by-step solution, or 
             message_placeholder.markdown(full_response)
 
         except Exception as e:
-            st.error(f"Error connecting to backend: {e}")
+            st.error(f"Error: {e}")
 
     if full_response:
         st.session_state.messages.append({"role": "assistant", "content": full_response})

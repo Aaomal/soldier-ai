@@ -202,7 +202,8 @@ if prompt := st.chat_input("Ask a question, request a step-by-step solution, or 
         {"role": "user", "content": user_input}
     ]
 
-            for chunk in response:
+    for chunk in response:
+        print(chunk)
                 if chunk.choices[0].delta.content:
                     full_response += chunk.choices[0].delta.content
                     message_placeholder.markdown(full_response + "▌")

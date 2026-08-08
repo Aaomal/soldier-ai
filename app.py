@@ -194,14 +194,13 @@ if prompt := st.chat_input("Ask a question, request a step-by-step solution, or 
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
         full_response = ""
-
+        st.write("DEBUG:", st.session_state.messages)
         try:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=full_messages,
-                temperature=0.4,
-                stream=True
-            )
+           response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=st.session_state.messages if st.session_state.messages else [
+        {"role": "user", "content": user_input}
+    ]
 
             for chunk in response:
                 if chunk.choices[0].delta.content:

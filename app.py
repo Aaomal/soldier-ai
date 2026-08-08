@@ -37,14 +37,4 @@ if user_input:
         st.chat_message("user").write(msg["content"])
     else:
         st.chat_message("assistant").write(msg["content"])
-        import pyttsx3
-
-engine = pyttsx3.init()
-
-def speak(text):
-    engine.say(text)
-    engine.runAndWait()
-
-# call after reply
-speak(reply)
-
+        
